@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -13,26 +14,22 @@ var validCommands = []string{
 
 func main() {
 	for {
-		// Wait for user input
 		fmt.Fprint(os.Stdout, "$ ")
 		shellString, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
-			fmt.Fprint(os.Stdout, "error while reading command")
+			fmt.Fprint(os.Stdout, "error while reading command\n")
 			os.Exit(1)
 		}
-
+		// remove \n
 		shellString = shellString[:len(shellString)-1]
 		args := strings.Split(shellString, " ")
 		command := args[0]
-		if !isWithinAvailableCommands(command) {
-			fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
-		} else {
-			evaluateCommand(command, args)
-		}
+		evaluateCommand(command, args)
 	}
 }
 
 func evaluateCommand(command string, args []string) {
+	pathString := os.Getenv("PATH")
 	switch command {
 	case "exit":
 		if args[1] != "0" {
@@ -43,14 +40,26 @@ func evaluateCommand(command string, args []string) {
 		echoString := strings.Join(args[1:], " ")
 		fmt.Fprintf(os.Stdout, "%s\n", echoString)
 	case "type":
-		executable := args[1]
-		pathString := os.Getenv("PATH")
-		if isWithinAvailableCommands(executable) {
-			fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", executable)
+		fileName := args[1]
+		if isWithinAvailableCommands(fileName) {
+			fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", fileName)
 			return
 		}
-		isOnPath(pathString, executable)
+		flag, fileLocation := isWithinPath(pathString, fileName)
+		if flag {
+			fmt.Fprintf(os.Stdout, "%s is %s\n", fileName, fileLocation)
+			return
+		}
+		fmt.Fprintf(os.Stdout, "%s: not found\n", fileName)
 	default:
+		flag, _ := isWithinPath(pathString, command)
+		if flag {
+			cmd := exec.Command(command, args[1:]...)
+			log, _ := cmd.Output()
+			// remove \r\n
+			fmt.Println(string(log[:len(log)-1]))
+			return
+		}
 		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 	}
 }
@@ -64,7 +73,7 @@ func isWithinAvailableCommands(command string) bool {
 	return false
 }
 
-func isOnPath(path string, exe string) {
+func isWithinPath(path string, givenFile string) (bool, string) {
 	addresses := strings.Split(path, ":")
 	for _, address := range addresses {
 		files, err := os.ReadDir(address)
@@ -72,11 +81,10 @@ func isOnPath(path string, exe string) {
 			continue
 		}
 		for _, file := range files {
-			if exe == file.Name() {
-				fmt.Fprintf(os.Stdout, "%s is %s/%s\n", exe, address, exe)
-				return
+			if givenFile == file.Name() {
+				return true, fmt.Sprintf("%s/%s", address, givenFile)
 			}
 		}
 	}
-	fmt.Fprintf(os.Stdout, "%s: not found\n", exe)
+	return false, ""
 }
