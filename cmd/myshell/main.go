@@ -17,14 +17,14 @@ func main() {
 		fmt.Fprint(os.Stdout, "$ ")
 		shellString, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
-			fmt.Fprint(os.Stdout, "Error while reading command")
+			fmt.Fprint(os.Stdout, "error while reading command")
 			os.Exit(1)
 		}
 
 		shellString = shellString[:len(shellString)-1]
 		args := strings.Split(shellString, " ")
 		command := args[0]
-		if !isValid(command) {
+		if !isWithinAvailableCommands(command) {
 			fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 		} else {
 			evaluateCommand(command, args)
@@ -43,22 +43,40 @@ func evaluateCommand(command string, args []string) {
 		echoString := strings.Join(args[1:], " ")
 		fmt.Fprintf(os.Stdout, "%s\n", echoString)
 	case "type":
-		typeShell := args[1]
-		if isValid(typeShell) {
-			fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", typeShell)
-		} else {
-			fmt.Fprintf(os.Stdout, "%s: not found\n", typeShell)
+		executable := args[1]
+		pathString := os.Getenv("PATH")
+		if isWithinAvailableCommands(executable) {
+			fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", executable)
+			return
 		}
+		isOnPath(pathString, executable)
 	default:
 		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 	}
 }
 
-func isValid(command string) bool {
+func isWithinAvailableCommands(command string) bool {
 	for _, c := range validCommands {
 		if command == c {
 			return true
 		}
 	}
 	return false
+}
+
+func isOnPath(path string, exe string) {
+	addresses := strings.Split(path, ":")
+	for _, address := range addresses {
+		files, err := os.ReadDir(address)
+		if err != nil {
+			continue
+		}
+		for _, file := range files {
+			if exe == file.Name() {
+				fmt.Fprintf(os.Stdout, "%s is %s/%s\n", exe, address, exe)
+				return
+			}
+		}
+	}
+	fmt.Fprintf(os.Stdout, "%s: not found\n", exe)
 }
