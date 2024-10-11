@@ -9,6 +9,7 @@ import (
 
 const (
 	CmdExit string = "exit"
+	CmdEcho string = "echo"
 )
 
 func main() {
@@ -31,6 +32,9 @@ func main() {
 				os.Exit(1)
 			}
 			os.Exit(0)
+		case CmdEcho:
+			echoString := strings.Join(args[1:], " ")
+			fmt.Fprintf(os.Stdout, "%s\n", echoString)
 		default:
 			fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 		}
