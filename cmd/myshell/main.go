@@ -7,10 +7,9 @@ import (
 	"strings"
 )
 
-const (
-	CmdExit string = "exit"
-	CmdEcho string = "echo"
-)
+var validCommands = []string{
+	"exit", "echo", "type",
+}
 
 func main() {
 	for {
@@ -25,18 +24,41 @@ func main() {
 		shellString = shellString[:len(shellString)-1]
 		args := strings.Split(shellString, " ")
 		command := args[0]
-
-		switch command {
-		case CmdExit:
-			if args[1] != "0" {
-				os.Exit(1)
-			}
-			os.Exit(0)
-		case CmdEcho:
-			echoString := strings.Join(args[1:], " ")
-			fmt.Fprintf(os.Stdout, "%s\n", echoString)
-		default:
+		if !isValid(command) {
 			fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
+		} else {
+			evaluateCommand(command, args)
 		}
 	}
+}
+
+func evaluateCommand(command string, args []string) {
+	switch command {
+	case "exit":
+		if args[1] != "0" {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	case "echo":
+		echoString := strings.Join(args[1:], " ")
+		fmt.Fprintf(os.Stdout, "%s\n", echoString)
+	case "type":
+		typeShell := args[1]
+		if isValid(typeShell) {
+			fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", typeShell)
+		} else {
+			fmt.Fprintf(os.Stdout, "%s: not found\n", typeShell)
+		}
+	default:
+		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
+	}
+}
+
+func isValid(command string) bool {
+	for _, c := range validCommands {
+		if command == c {
+			return true
+		}
+	}
+	return false
 }
