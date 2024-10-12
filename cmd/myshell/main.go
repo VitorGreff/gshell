@@ -9,7 +9,7 @@ import (
 )
 
 var validCommands = []string{
-	"exit", "echo", "type", "pwd",
+	"exit", "echo", "type", "pwd", "cd",
 }
 
 func main() {
@@ -54,13 +54,19 @@ func evaluateCommand(command string, args []string) {
 	case "pwd":
 		absolutePath, _ := os.Getwd()
 		fmt.Fprintln(os.Stdout, absolutePath)
+	case "cd":
+		path := args[1]
+		err := os.Chdir(path)
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "cd: %s: No such file or directory\n", path)
+		}
 	default:
 		flag, _ := isWithinPath(pathString, command)
 		if flag {
 			cmd := exec.Command(command, args[1:]...)
 			log, _ := cmd.Output()
 			// remove \r\n
-			fmt.Println(string(log[:len(log)-1]))
+			fmt.Fprintln(os.Stdout, string(log[:len(log)-1]))
 			return
 		}
 		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
