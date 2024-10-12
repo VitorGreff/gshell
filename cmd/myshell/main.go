@@ -9,7 +9,7 @@ import (
 )
 
 var validCommands = []string{
-	"exit", "echo", "type",
+	"exit", "echo", "type", "pwd",
 }
 
 func main() {
@@ -51,6 +51,9 @@ func evaluateCommand(command string, args []string) {
 			return
 		}
 		fmt.Fprintf(os.Stdout, "%s: not found\n", fileName)
+	case "pwd":
+		absolutePath, _ := os.Getwd()
+		fmt.Fprintln(os.Stdout, absolutePath)
 	default:
 		flag, _ := isWithinPath(pathString, command)
 		if flag {
