@@ -56,6 +56,9 @@ func evaluateCommand(command string, args []string) {
 		fmt.Fprintln(os.Stdout, absolutePath)
 	case "cd":
 		path := args[1]
+		if path == "~" {
+			path, _ = os.UserHomeDir()
+		}
 		err := os.Chdir(path)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "cd: %s: No such file or directory\n", path)
