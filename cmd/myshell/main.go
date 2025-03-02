@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 )
 
@@ -41,7 +42,7 @@ func evaluateCommand(command string, args []string) {
 		fmt.Fprintf(os.Stdout, "%s\n", echoString)
 	case "type":
 		fileName := args[1]
-		if isWithinAvailableCommands(fileName) {
+		if slices.Contains(validCommands, fileName) {
 			fmt.Fprintf(os.Stdout, "%s is a shell builtin\n", fileName)
 			return
 		}
@@ -74,15 +75,6 @@ func evaluateCommand(command string, args []string) {
 		}
 		fmt.Fprintf(os.Stdout, "%s: command not found\n", command)
 	}
-}
-
-func isWithinAvailableCommands(command string) bool {
-	for _, c := range validCommands {
-		if command == c {
-			return true
-		}
-	}
-	return false
 }
 
 func isWithinPath(path string, givenFile string) (bool, string) {
